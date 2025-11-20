@@ -1,210 +1,38 @@
-/* src/App.css */
+:root { --bg:#f0f0f0; --card:#fff; --p:#909bff; --s:#FFC900; --a:#00FF94; --b:#000; --sh:5px 5px 0 0 #000; }
+body { margin:0; min-height:100vh; background:var(--bg) radial-gradient(#000 1px, transparent 1px); background-size:20px 20px; font-family:'Courier New', monospace; display:flex; justify-content:center; align-items:center; }
+#root { width:100%; display:flex; justify-content:center; padding:2rem; box-sizing:border-box; }
+.container { width:100%; max-width:500px; display:flex; flex-direction:column; align-items:center; text-align:center; }
 
-/* 1. Definisi Warna & Variabel */
-:root {
-  --bg-color: #f0f0f0;
-  --card-bg: #ffffff;
-  --primary: #909bff; /* Pink Neon */
-  --secondary: #FFC900; /* Kuning Terang */
-  --accent: #00FF94; /* Hijau Neon */
-  --border-color: #000000;
-  --shadow: 5px 5px 0px 0px #000000;
-}
+h1 { background:var(--s); border:3px solid var(--b); box-shadow:var(--sh); padding:10px 20px; font-weight:900; text-transform:uppercase; transform:rotate(-2deg); margin-bottom:1rem; display:inline-block; font-size:2.5rem; color:#000; }
+p { font-weight:bold; font-size:20px; color:#000; line-height:1.6; background:rgba(255,255,255,0.8); padding:5px; }
 
-/* REVISI DI SINI: Pindahkan style background ke body agar full layar */
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background-color: var(--bg-color);
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 20px 20px;
-  font-family: 'Courier New', Courier, monospace;
+.card { width:100%; background:var(--card); padding:2.5em; border:3px solid var(--b); box-shadow:var(--sh); margin-top:30px; box-sizing:border-box; }
+.stats { display:flex; gap:15px; justify-content:space-between; margin-bottom:25px; }
+.stats div { flex:1; background:#fff; border:2px solid var(--b); padding:10px; }
+.stats h3 { margin:0; font-size:0.9rem; text-transform:uppercase; border-bottom:2px solid var(--b); background:#eee; padding-bottom:5px; margin-bottom:5px; color:#000; font-weight:800; }
+.stats p { margin:0; font-size:1.1rem; font-weight:900; color:#000; background:transparent; padding:0; word-break:break-word; }
 
-  /* Gunakan Flexbox untuk menengahkan konten */
-  display: flex;
-  justify-content: center; 
-  align-items: center;    
-}
+.wallet-address { background:#fff; border:2px solid var(--b); display:inline-block; padding:5px 10px; font-size:0.9rem; margin-top:10px; font-weight:bold; color:#000; }
 
-/* #root tidak perlu background lagi, cukup jadi wadah konten */
-#root {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 2rem; /* Memberi jarak aman di layar kecil */
-  box-sizing: border-box; /* Agar padding tidak menambah lebar */
-}
+button { font-family:inherit; font-weight:800; text-transform:uppercase; cursor:pointer; transition:0.1s; color:#000; }
+.btn-connect { background:var(--p); padding:12px 24px; border:3px solid var(--b); box-shadow:var(--sh); font-size:1rem; margin-top:20px; }
+.btn-connect:hover { transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 #000; }
+.btn-connect:active { transform:translate(2px,2px); box-shadow:2px 2px 0 0 #000; }
 
-/* 2. Judul Utama */
-h1 {
-  background-color: var(--secondary);
-  border: 3px solid var(--border-color);
-  box-shadow: var(--shadow);
-  padding: 10px 20px;
-  font-weight: 900;
-  text-transform: uppercase;
-  transform: rotate(-2deg);
-  margin-bottom: 0.5rem;
-  display: inline-block; /* Agar background kuning pas dengan teks */
-}
+.btn-donate { width:100%; background:var(--a); padding:18px; font-size:1.2rem; border:3px solid var(--b); box-shadow:var(--sh); margin-top:25px; }
+.btn-donate:hover:not(:disabled) { background:#00db7e; transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 #000; }
+.btn-donate:active:not(:disabled) { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #000; }
+.btn-donate:disabled { background:#ccc; color:#666; cursor:not-allowed; box-shadow:none; transform:translate(4px,4px); }
 
-p {
-  font-weight: bold;
-  font-size: 24px;
-  color: #333;
-}
-
-/* REVISI DI SINI: Pastikan container di tengah */
-.container {
-  width: 100%;
-  max-width: 500px; /* Lebar maksimal card */
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Menengahkan elemen di dalam container */
-  text-align: center;
-}
-
-/* 3. Card Container */
-.card {
-  width: 100%; /* Memenuhi container */
-  background: var(--card-bg);
-  padding: 2.5em;
-  border: 3px solid var(--border-color);
-  box-shadow: var(--shadow);
-  margin-top: 30px;
-  text-align: center;
-  box-sizing: border-box; /* Agar padding tidak bikin card melebar */
-}
-
-/* 4. Stats Box (Target & Terkumpul) */
-.stats {
-  display: flex;
-  gap: 15px;
-  justify-content: space-between;
-  margin-bottom: 25px;
-}
-
-.stats div {
-  flex: 1;
-  background: #fff;
-  border: 2px solid var(--border-color);
-  padding: 10px;
-}
-
-.stats h3 {
-  margin: 0;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  border-bottom: 2px solid var(--border-color);
-  background-color: #eee;
-  padding-bottom: 5px;
-  margin-bottom: 5px;
-}
-
-.stats p {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 900;
-}
-
-/* 5. Wallet Address Badge */
-.wallet-address {
-  background-color: #fff;
-  border: 2px solid var(--border-color);
-  display: inline-block;
-  padding: 5px 10px;
-  font-size: 0.8rem;
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-/* 6. Tombol (Buttons) */
-button {
-  font-family: inherit;
-  font-weight: 800;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.1s;
-}
-
-.btn-connect {
-  background-color: var(--primary);
-  color: #000;
-  padding: 12px 24px;
-  border: 3px solid var(--border-color);
-  box-shadow: var(--shadow);
-  font-size: 1rem;
-  margin-top: 20px; /* Tambah jarak */
-}
-
-.btn-connect:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0px 0px #000;
-}
-
-.btn-connect:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px 0px #000;
-}
-
-.btn-donate {
-  width: 100%;
-  background-color: var(--accent);
-  color: #000;
-  padding: 18px;
-  font-size: 1.2rem;
-  border: 3px solid var(--border-color);
-  box-shadow: var(--shadow);
-  margin-top: 25px;
-}
-
-.btn-donate:hover:not(:disabled) {
-  background-color: #00db7e;
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0px 0px #000;
-}
-
-.btn-donate:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px 0px #000;
-}
-
-.btn-donate:disabled {
-  background-color: #ccc;
-  color: #666;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: translate(4px, 4px);
-}
-
-/* 7. Progress Bar */
-.progress-bar {
-  width: 100%;
-  height: 25px;
-  background-color: #fff;
-  border: 3px solid var(--border-color);
-  position: relative;
-  overflow: hidden; /* Biar rapi */
-}
-
-.fill {
-  height: 100%;
-  background-color: var(--primary);
-  border-right: 3px solid var(--border-color);
-  width: 0%;
-  transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
-  /* Striped pattern effect */
-  background-image: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.1) 25%,
-    transparent 25%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.1) 50%,
-    rgba(0, 0, 0, 0.1) 75%,
-    transparent 75%,
-    transparent
-  );
-  background-size: 20px 20px;
+@media (max-width: 768px) {
+  h1 { font-size:1.8rem; padding:8px 15px; border-width:2px; box-shadow:3px 3px 0 0 #000; }
+  p { font-size:14px; padding:2px; }
+  .card { padding:1.5em; margin-top:15px; box-shadow:3px 3px 0 0 #000; }
+  .stats { gap:8px; margin-bottom:15px; }
+  .stats div { padding:8px; }
+  .stats h3 { font-size:0.7rem; padding-bottom:3px; }
+  .stats p { font-size:0.9rem; margin-top:5px; }
+  .btn-donate { padding:12px; font-size:1rem; margin-top:15px; box-shadow:3px 3px 0 0 #000; }
+  .btn-connect { padding:10px 15px; font-size:0.9rem; box-shadow:3px 3px 0 0 #000; }
+  .wallet-address { font-size:0.75rem; padding:4px 8px; }
 }
