@@ -1,0 +1,5 @@
+<svg class="lucide lucide-circle-dollar-sign" xmlns="http://www.w3.org/2000/svg" width="339" height="339" viewBox="0 0 24 24" fill="none" stroke="url(#iconhub-icon-stroke-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="iconhub-icon-stroke-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24" gradientTransform="rotate(90, 12, 12)"><stop offset="0%" stop-color="rgba(2,0,36,1)"/><stop offset="71%" stop-color="rgba(0,255,0,1)"/><stop offset="100%" stop-color="rgba(0,212,255,1)"/></linearGradient></defs><rect id="iconhub-bg-rect" x="0" y="0" width="calc(100% - 0px)" height="calc(100% - 0px)" fill="none" rx="0" stroke-width="0" stroke="none"/>
+  <circle cx="12" cy="12" r="10" id="shape-1"/>
+  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" id="shape-2"/>
+  <path d="M12 18V6" id="shape-3"/>
+</svg>
