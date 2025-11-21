@@ -97,7 +97,7 @@ function App() {
   return (
     <div className="container">
       <h1>🎓KampusFund</h1>
-      <p>Platform Donasi Kemanusiaan Mahasiswa</p>
+      <p>Platform Donasi Kemanusiaan Mahasiswa (Berbasis Blockchain)</p>
 
       {!authenticated ? (
         <button onClick={login} className="btn-connect">Sambungkan Dompet</button>
