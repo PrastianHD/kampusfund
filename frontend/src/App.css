@@ -36,3 +36,54 @@ button { font-family:inherit; font-weight:800; text-transform:uppercase; cursor:
   .btn-connect { padding:10px 15px; font-size:0.9rem; box-shadow:3px 3px 0 0 #000; }
   .wallet-address { font-size:0.75rem; padding:4px 8px; }
 }
+
+.user-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px; 
+  margin-top: 25px;
+  flex-wrap: wrap; 
+}
+
+.retro-box {
+  border: 3px solid #000; 
+  padding: 8px 16px;
+  font-weight: 800; 
+  font-size: 0.9rem;
+  box-shadow: 4px 4px 0 0 #000; 
+  height: 46px; 
+  display: flex;
+  align-items: center;
+  box-sizing: border-box; 
+  font-family: inherit;
+}
+
+
+.box-address {
+  background: #fff;
+  color: #000;
+}
+
+.box-logout {
+  background: #FF5252; 
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.box-logout:hover {
+  transform: translate(-2px, -2px); 
+  box-shadow: 6px 6px 0 0 #000; 
+}
+
+.box-logout:active {
+  transform: translate(2px, 2px); 
+  box-shadow: 2px 2px 0 0 #000;
+}
+
+.box-admin {
+  background: #FFC900; 
+  color: #000;
+  text-transform: uppercase;
+}
