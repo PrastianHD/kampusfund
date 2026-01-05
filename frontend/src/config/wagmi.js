@@ -1,17 +1,23 @@
+// frontend/src/config/wagmi.js
 import { http, createConfig } from 'wagmi'
 import { base } from 'wagmi/chains'
-import { getDefaultConfig } from 'connectkit'
+import { injected, coinbaseWallet } from 'wagmi/connectors'
 
-export const config = createConfig(
-  getDefaultConfig({
-    // Jaringan yang didukung
-    chains: [base],
-    transports: {
-      [base.id]: http(),
-    },
-
-    // Required info
-    walletConnectProjectId: 'e2d1fcf12021d969d60caa4ee701f6fe', // Bisa didapat gratis di cloud.walletconnect.com
-    appName: 'KampusFund',
-  }),
-)
+export const config = createConfig({
+  // Menentukan jaringan utama: Base Mainnet
+  chains: [base],
+  
+  // Menggunakan connector standar (tanpa ConnectKit/Privy)
+  connectors: [
+    injected(), // Untuk MetaMask, Rabby, atau Browser Wallet lainnya
+    coinbaseWallet({ 
+      appName: 'KampusFund',
+      preference: 'smartWalletOnly' // Opsional: mengutamakan Smart Wallet
+    }),
+  ],
+  
+  // Pengaturan pengiriman data ke blockchain
+  transports: {
+    [base.id]: http(),
+  },
+})
