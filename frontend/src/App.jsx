@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Tambahkan useEffect
 import './App.css';
 import { usePrivy } from '@privy-io/react-auth';
-import { useReadContract, useWriteContract, useAccount, usePublicClient, useGasPrice } from 'wagmi';
+import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi'; // Hapus useGasPrice agar otomatis
 import { parseEther, formatEther, maxUint256 } from 'viem'; 
 import { CONTRACT_ADDRESS, CONTRACT_ABI, TOKEN_ADDRESS, TOKEN_ABI } from './config/constants';
 
 function App() {
   const { login, user, authenticated, logout } = usePrivy();
-  const { address: userAddress } = useAccount();
+  // Ambil isConnected untuk cek status koneksi Wagmi
+  const { address: userAddress, isConnected } = useAccount(); 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const { data: currentGasPrice } = useGasPrice();
+  
   const [loading, setLoading] = useState(false);
   const [notif, setNotif] = useState({ msg: "", type: "" });
+  
+  // --- DEBUGGING LOGS (Cek Console Browser) ---
+  useEffect(() => {
+    console.log("🔍 DEBUG STATE:");
+    console.log(" - Privy Authenticated:", authenticated);
+    console.log(" - Wagmi Connected:", isConnected);
+    console.log(" - User Address:", userAddress);
+  }, [authenticated, isConnected, userAddress]);
+  // --------------------------------------------
+
   const { data, refetch } = useReadContract({
     address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getData',
   });
@@ -24,70 +35,81 @@ function App() {
   const fmtRupiah = (n) => parseFloat(n).toLocaleString('id-ID');
 
   const handleAction = async (actionType) => {
+    console.log(`👉 Tombol ${actionType} diklik`);
+    
+    // --- PENGAMAN UTAMA (Supaya tidak error ConnectorNotConnected) ---
+    if (!isConnected) {
+        console.warn("⚠️ Wagmi belum connect! Mencegah crash...");
+        setNotif({ msg: "⏳ Sinkronisasi Wallet... Tunggu 3 detik & coba lagi.", type: "proses" });
+        return; // Berhenti di sini, jangan lanjut transaksi
+    }
+    // -----------------------------------------------------------------
+
     setLoading(true);
     setNotif({ msg: "", type: "" });
-    const gasTurbo = currentGasPrice ? (currentGasPrice * 200n) / 100n : undefined; // 150% (1.5x)
     
     try {
       if (actionType === 'DONASI') {
+        // --- TAHAP 1: APPROVE ---
         try {
-            setNotif({ msg: "Setujui Dulu Ya.", type: "proses" });
+            setNotif({ msg: "Setujui Dulu Ya...", type: "proses" });
+            console.log("🚀 Mulai Approve...");
+            
             const hashApprove = await writeContractAsync({ 
                 address: TOKEN_ADDRESS, 
                 abi: TOKEN_ABI, 
                 functionName: 'approve', 
                 args: [CONTRACT_ADDRESS, maxUint256],
-                gasPrice: gasTurbo,
-                gas: 100000n
             });
             
-            await publicClient.waitForTransactionReceipt({ 
-                hash: hashApprove,
-                pollingInterval: 100 
-            });
+            console.log("✅ Approve Hash:", hashApprove);
+            // Tunggu sampai transaksi approve BENAR-BENAR selesai
+            await publicClient.waitForTransactionReceipt({ hash: hashApprove });
 
         } catch (err) {
-            console.log("Info: Approve dilewati/sudah ada");
+            console.error("❌ Gagal Approve:", err);
+            // JANGAN LANJUT kalau approve gagal!
+            setNotif({ msg: "Gagal Approve (Wajib disetujui)", type: "gagal" });
+            setLoading(false); // Matikan loading
+            return; // <--- STOP DISINI
         }
 
-        // ---  DONASI ---
-        setNotif({ msg: "Konfirmasi Donasi.", type: "proses" });
+        // --- TAHAP 2: DONASI ---
+        // Kode ini hanya akan jalan kalau tahap 1 sukses
+        setNotif({ msg: "Konfirmasi Transaksi Donasi...", type: "proses" });
         
         const hashDonasi = await writeContractAsync({ 
             address: CONTRACT_ADDRESS, 
             abi: CONTRACT_ABI, 
             functionName: 'donasi', 
             args: [parseEther("50000")],
-            gasPrice: gasTurbo,
-            gas: 100000n 
         });
         
-        await publicClient.waitForTransactionReceipt({ 
-            hash: hashDonasi,
-            pollingInterval: 100 
-        }); 
+        console.log("✅ Donasi Hash:", hashDonasi);
+        await publicClient.waitForTransactionReceipt({ hash: hashDonasi }); 
 
-        setNotif({ msg: "Terima Kasih! Donasi Berhasil.", type: "sukses" });
+        setNotif({ msg: "🎉 Terima Kasih! Donasi Berhasil.", type: "sukses" });
 
       } else {
         // --- WITHDRAW ---
+        console.log("🚀 Mulai Withdraw...");
         const hash = await writeContractAsync({ 
             address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'withdraw',
-            gasPrice: gasTurbo,
-            gas: 100000n
         });
-        await publicClient.waitForTransactionReceipt({ hash, pollingInterval: 1_000 }); 
+        await publicClient.waitForTransactionReceipt({ hash }); 
         setNotif({ msg: "✅ Penarikan Berhasil!", type: "sukses" });
       }
 
       await refetch(); 
 
     } catch (err) {
-      console.error(err);
+      console.error("❌ ERROR TRANSAKSI:", err);
+      
       if(err.message.includes("User rejected")) {
-          setNotif({ msg: "Transaksi Dibatalkan", type: "gagal" });
+          setNotif({ msg: "🚫 Transaksi Dibatalkan User", type: "gagal" });
       } else {
-          setNotif({ msg: "Transaksi Gagal", type: "gagal" });
+          // Tampilkan error spesifik di notif biar gampang debug
+          setNotif({ msg: "❌ Gagal: " + (err.shortMessage || err.message), type: "gagal" });
       }
     } finally {
       setLoading(false);
@@ -114,7 +136,7 @@ function App() {
             <div style={{
                 padding: '15px', marginBottom: '20px', border: '3px solid black', 
                 backgroundColor: notif.type === 'sukses' ? '#ccffcc' : notif.type === 'gagal' ? '#ffcccc' : '#fff3cd', 
-                fontWeight: 'bold'
+                fontWeight: 'bold', wordWrap: 'break-word'
             }}>
                 {notif.msg}
             </div>
@@ -125,12 +147,25 @@ function App() {
           <div><h3>Saldo Tersedia</h3><p>Rp {fmtRupiah(saldo)}</p></div>
         </div>
 
+        {/* Tambahkan Link Faucet Manual untuk Debugging Saldo */}
+        {authenticated && (
+             <a 
+               href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               style={{fontSize: '11px', display: 'block', marginBottom: '10px', color: 'blue', cursor: 'pointer'}}
+             >
+               [DEBUG] Butuh Saldo Sepolia? Klik disini
+             </a>
+        )}
+
         <button 
           onClick={() => handleAction('DONASI')} 
+          // Tombol menyala asal authenticated true (jangan pakai isConnected disini biar gak greyed out terus)
           disabled={loading || !authenticated} 
           className="btn-donate"
         >
-          {loading ? "loading..." : "Donasi Rp 50.000"}
+          {loading ? "Memproses..." : "Donasi Rp 50.000"}
         </button>
 
         {isAdmin && (

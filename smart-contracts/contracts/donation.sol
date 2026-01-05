@@ -12,24 +12,24 @@ contract Donasi {
     IERC20 public tokenRupiah;      // Alamat Token Rupiah
     uint256 public totalDonasiMasuk; // Total donasi tercatat
 
-    constructor(address _alamatToken) {
+    constructor(address _alamatToken) {  // Func Send
         owner = msg.sender;
         tokenRupiah = IERC20(_alamatToken);
     }
 
-    function donasi(uint256 _jumlah) public {
+    function donasi(uint256 _jumlah) public { 
         tokenRupiah.transferFrom(msg.sender, address(this), _jumlah);
         totalDonasiMasuk += _jumlah;
     }
 
-    function withdraw() public {
+    function withdraw() public { 
         require(msg.sender == owner, "Kamu bukan Admin!");
         
         uint256 saldoSaatIni = tokenRupiah.balanceOf(address(this));
         tokenRupiah.transfer(owner, saldoSaatIni);
     }
 
-    function getData() public view returns (uint256, uint256, address) {
+    function getData() public view returns (uint256, uint256, address) { 
         return (totalDonasiMasuk, tokenRupiah.balanceOf(address(this)), owner);
     }
 }

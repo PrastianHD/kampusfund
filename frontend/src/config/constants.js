@@ -1,8 +1,8 @@
 // 1. Address Contract DONASI 
-export const CONTRACT_ADDRESS = "0xC7dCf4eF4F4bc9f055F3b6CfA61F51E3a0451754"; 
+export const CONTRACT_ADDRESS = "0x196235859a816156db16beB2cBea71bBc9AA63Ae"; 
 
 // 2. Address Token RUPIAH 
-export const TOKEN_ADDRESS = "0x304287575c4d434DD81af75b15618daF1b6fbd5e";
+export const TOKEN_ADDRESS = "0x97493d8b4b693762cf058c9374ac818e6af965a4";
 
 export const CONTRACT_ABI = [
   { "inputs": [{"internalType": "uint256","name": "_jumlah","type": "uint256"}], "name": "donasi", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
