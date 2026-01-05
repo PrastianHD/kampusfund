@@ -1,100 +1,94 @@
-import { useState, useEffect } from 'react'; // Tambahkan useEffect
+import { useState, useEffect } from 'react';
 import './App.css';
-import { usePrivy } from '@privy-io/react-auth';
-import { useReadContract, useWriteContract, useAccount, usePublicClient } from 'wagmi'; // Hapus useGasPrice agar otomatis
+import { 
+  useReadContract, 
+  useWriteContract, 
+  useAccount, 
+  usePublicClient, 
+  useConnect, 
+  useDisconnect 
+} from 'wagmi'; 
 import { parseEther, formatEther, maxUint256 } from 'viem'; 
 import { CONTRACT_ADDRESS, CONTRACT_ABI, TOKEN_ADDRESS, TOKEN_ABI } from './config/constants';
 
 function App() {
-  const { login, user, authenticated, logout } = usePrivy();
-  // Ambil isConnected untuk cek status koneksi Wagmi
+  // --- WAGMI HOOKS ---
   const { address: userAddress, isConnected } = useAccount(); 
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   
+  // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [notif, setNotif] = useState({ msg: "", type: "" });
   
-  // --- DEBUGGING LOGS (Cek Console Browser) ---
+  // --- DEBUGGING LOGS ---
   useEffect(() => {
     console.log("🔍 DEBUG STATE:");
-    console.log(" - Privy Authenticated:", authenticated);
-    console.log(" - Wagmi Connected:", isConnected);
+    console.log(" - Wallet Connected:", isConnected);
     console.log(" - User Address:", userAddress);
-  }, [authenticated, isConnected, userAddress]);
-  // --------------------------------------------
+  }, [isConnected, userAddress]);
 
+  // --- READ CONTRACT ---
   const { data, refetch } = useReadContract({
-    address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getData',
+    address: CONTRACT_ADDRESS, 
+    abi: CONTRACT_ABI, 
+    functionName: 'getData',
   });
 
   const totalDonasi = data ? formatEther(data[0]) : "0";
   const saldo = data ? formatEther(data[1]) : "0";
-  const isAdmin = authenticated && data && (user?.wallet?.address || userAddress)?.toLowerCase() === data[2]?.toLowerCase();
+  // Logika Admin: Membandingkan address wallet dengan owner di contract
+  const isAdmin = isConnected && data && userAddress?.toLowerCase() === data[2]?.toLowerCase();
 
   const fmtRupiah = (n) => parseFloat(n).toLocaleString('id-ID');
 
+  // --- CORE LOGIC: TRANSAKSI ---
   const handleAction = async (actionType) => {
-    console.log(`👉 Tombol ${actionType} diklik`);
-    
-    // --- PENGAMAN UTAMA (Supaya tidak error ConnectorNotConnected) ---
     if (!isConnected) {
-        console.warn("⚠️ Wagmi belum connect! Mencegah crash...");
-        setNotif({ msg: "⏳ Sinkronisasi Wallet... Tunggu 3 detik & coba lagi.", type: "proses" });
-        return; // Berhenti di sini, jangan lanjut transaksi
+        setNotif({ msg: "Silahkan sambungkan dompet terlebih dahulu!", type: "gagal" });
+        return;
     }
-    // -----------------------------------------------------------------
 
     setLoading(true);
     setNotif({ msg: "", type: "" });
     
     try {
       if (actionType === 'DONASI') {
-        // --- TAHAP 1: APPROVE ---
+        // TAHAP 1: APPROVE (Izin kontrak menarik token)
         try {
-            setNotif({ msg: "Setujui Dulu Ya...", type: "proses" });
-            console.log("🚀 Mulai Approve...");
-            
+            setNotif({ msg: "Menyetujui penggunaan token...", type: "proses" });
             const hashApprove = await writeContractAsync({ 
                 address: TOKEN_ADDRESS, 
                 abi: TOKEN_ABI, 
                 functionName: 'approve', 
                 args: [CONTRACT_ADDRESS, maxUint256],
             });
-            
-            console.log("✅ Approve Hash:", hashApprove);
-            // Tunggu sampai transaksi approve BENAR-BENAR selesai
             await publicClient.waitForTransactionReceipt({ hash: hashApprove });
-
         } catch (err) {
-            console.error("❌ Gagal Approve:", err);
-            // JANGAN LANJUT kalau approve gagal!
             setNotif({ msg: "Gagal Approve (Wajib disetujui)", type: "gagal" });
-            setLoading(false); // Matikan loading
-            return; // <--- STOP DISINI
+            setLoading(false);
+            return;
         }
 
-        // --- TAHAP 2: DONASI ---
-        // Kode ini hanya akan jalan kalau tahap 1 sukses
-        setNotif({ msg: "Konfirmasi Transaksi Donasi...", type: "proses" });
-        
+        // TAHAP 2: DONASI
+        setNotif({ msg: "Konfirmasi transaksi donasi...", type: "proses" });
         const hashDonasi = await writeContractAsync({ 
             address: CONTRACT_ADDRESS, 
             abi: CONTRACT_ABI, 
             functionName: 'donasi', 
-            args: [parseEther("50000")],
+            args: [parseEther("50000")], // Nominal statis Rp 50.000 (sesuai logika token Anda)
         });
-        
-        console.log("✅ Donasi Hash:", hashDonasi);
         await publicClient.waitForTransactionReceipt({ hash: hashDonasi }); 
-
         setNotif({ msg: "🎉 Terima Kasih! Donasi Berhasil.", type: "sukses" });
 
       } else {
-        // --- WITHDRAW ---
-        console.log("🚀 Mulai Withdraw...");
+        // WITHDRAW (Hanya Admin)
         const hash = await writeContractAsync({ 
-            address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'withdraw',
+            address: CONTRACT_ADDRESS, 
+            abi: CONTRACT_ABI, 
+            functionName: 'withdraw',
         });
         await publicClient.waitForTransactionReceipt({ hash }); 
         setNotif({ msg: "✅ Penarikan Berhasil!", type: "sukses" });
@@ -103,13 +97,11 @@ function App() {
       await refetch(); 
 
     } catch (err) {
-      console.error("❌ ERROR TRANSAKSI:", err);
-      
+      console.error("❌ ERROR:", err);
       if(err.message.includes("User rejected")) {
-          setNotif({ msg: "🚫 Transaksi Dibatalkan User", type: "gagal" });
+          setNotif({ msg: "🚫 Transaksi Dibatalkan", type: "gagal" });
       } else {
-          // Tampilkan error spesifik di notif biar gampang debug
-          setNotif({ msg: "❌ Gagal: " + (err.shortMessage || err.message), type: "gagal" });
+          setNotif({ msg: "❌ Gagal: " + (err.shortMessage || "Terjadi kesalahan"), type: "gagal" });
       }
     } finally {
       setLoading(false);
@@ -118,59 +110,69 @@ function App() {
 
   return (
     <div className="container">
-      <h1>🎓KampusFund</h1>
-      <p>Platform Donasi Kemanusiaan Mahasiswa (Berbasis Blockchain)</p>
+      <h1>🎓 KampusFund</h1>
+      <p>Platform Donasi Kemanusiaan Mahasiswa (Base Mainnet)</p>
 
-      {!authenticated ? (
-        <button onClick={login} className="btn-connect">Sambungkan Dompet</button>
+      {/* UI CONNECT WALLET */}
+      {!isConnected ? (
+        <div className="login-section">
+          {connectors.map((connector) => (
+            <button 
+              key={connector.uid} 
+              onClick={() => connect({ connector })}
+              className="btn-connect"
+            >
+              Connect with {connector.name}
+            </button>
+          ))}
+        </div>
       ) : (
         <div className="user-bar">
-           <div className="retro-box box-address">👤 {(user?.wallet?.address || userAddress)?.substring(0, 6)}...</div>
-           <button onClick={logout} className="retro-box box-logout">LOGOUT</button>
+           <div className="retro-box box-address">👤 {userAddress?.substring(0, 6)}...{userAddress?.substring(userAddress.length - 4)}</div>
+           <button onClick={() => disconnect()} className="retro-box box-logout">DISCONNECT</button>
            {isAdmin && <div className="retro-box box-admin">ADMIN</div>}
         </div>
       )}
 
       <div className="card">
+        {/* NOTIFIKASI SYSTEM */}
         {notif.msg && (
             <div style={{
                 padding: '15px', marginBottom: '20px', border: '3px solid black', 
                 backgroundColor: notif.type === 'sukses' ? '#ccffcc' : notif.type === 'gagal' ? '#ffcccc' : '#fff3cd', 
                 fontWeight: 'bold', wordWrap: 'break-word'
             }}>
-                {notif.msg}
+                {notif.type === 'proses' && "⏳ "} {notif.msg}
             </div>
         )}
 
+        {/* STATS AREA */}
         <div className="stats">
           <div><h3>Total Donasi</h3><p>Rp {fmtRupiah(totalDonasi)}</p></div>
           <div><h3>Saldo Tersedia</h3><p>Rp {fmtRupiah(saldo)}</p></div>
         </div>
 
-        {/* Tambahkan Link Faucet Manual untuk Debugging Saldo */}
-        {authenticated && (
-             <a 
-               href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               style={{fontSize: '11px', display: 'block', marginBottom: '10px', color: 'blue', cursor: 'pointer'}}
-             >
-               [DEBUG] Butuh Saldo Sepolia? Klik disini
-             </a>
-        )}
-
+        {/* BUTTON ACTION */}
         <button 
           onClick={() => handleAction('DONASI')} 
-          // Tombol menyala asal authenticated true (jangan pakai isConnected disini biar gak greyed out terus)
-          disabled={loading || !authenticated} 
+          disabled={loading || !isConnected} 
           className="btn-donate"
+          style={{ opacity: !isConnected ? 0.5 : 1 }}
         >
           {loading ? "Memproses..." : "Donasi Rp 50.000"}
         </button>
 
+        {/* ADMIN SECTION */}
         {isAdmin && (
             <div style={{marginTop: '30px', borderTop: '3px dashed black', paddingTop: '20px'}}>
-                <button onClick={() => handleAction('WITHDRAW')} style={{backgroundColor: '#FF5252', color: 'white', border: '3px solid black', padding: '10px', width: '100%', fontWeight: 'bold', cursor: 'pointer'}}>
+                <button 
+                  onClick={() => handleAction('WITHDRAW')} 
+                  disabled={loading}
+                  style={{
+                    backgroundColor: '#FF5252', color: 'white', border: '3px solid black', 
+                    padding: '10px', width: '100%', fontWeight: 'bold', cursor: 'pointer'
+                  }}
+                >
                     TARIK HASIL DONASI
                 </button>
             </div>
